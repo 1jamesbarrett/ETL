@@ -2,8 +2,8 @@ words = "Lol, this is a gag, I didn't laugh so much in a long time"
 print(words)
 # print(words[::-1]) # print in reverse order
 import string
-new_words = words.translate(string.punctuation) # remove punctuation
-new_words = words.translate(str.maketrans('', '', string.punctuation))
+new_words = words.translate(string.punctuation) 
+new_words = words.translate(str.maketrans('', '', string.punctuation)) # remove punctuation
 new_words = new_words.lower()
 # print(string.punctuation)
 print("\n")
