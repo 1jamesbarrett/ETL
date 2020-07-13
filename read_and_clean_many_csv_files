@@ -1,0 +1,106 @@
+import os
+import glob
+import pandas as pd
+import numpy as np
+import csv
+
+#### read in all csv files from specified directory  ###########
+
+
+path = 'C:/barrett/Teave/XY/'
+allFiles = glob.glob(os.path.join(path,"*.csv"))
+
+np_array_list = []
+for file_ in allFiles:
+    print(file_)
+    df = pd.read_csv(file_,  skipinitialspace=True, index_col=None, header=None,  thousands=',', na_values=['NAN'])
+    #  print(df.shape)  # gives count by file for qc
+    np_array_list.append(df.as_matrix())
+
+#### combine all files into single data frame ###
+
+comb_np_array = np.vstack(np_array_list)
+df_all = pd.DataFrame(comb_np_array)
+
+#### name columns ###
+df_all.columns = ['ticket_id', 'ticket_purchase_date', 'Customer_Status', 'LocalGAAPRevenue', 'Lic_Amnt',
+                  'quantity',	'licensee_id',	'parent_id', 'licensee_name', 'Channel_Category', 'channel_name', 'market',
+                  'country', 'Nite_Type']
+
+### change data types types
+df_all['ticket_purchase_date'] = pd.to_datetime(df_all['ticket_purchase_date']) #, unit='s')
+df_all['LocalGAAPRevenue'] = pd.to_numeric(df_all['LocalGAAPRevenue']) #, unit='s')
+df_all['Lic_Amnt'] = pd.to_numeric(df_all['Lic_Amnt']) #,  downcast='float') #, unit='s')
+df_all['quantity'] = pd.to_numeric(df_all['quantity'], downcast='float') #, unit='s')
+
+### replace nulls ###
+df_all.replace(['NULL', ' NULL', 'nan'],  ['Not Avail', 'Not Avail', 'Not Avail'])
+
+##############################################
+# fix messy data
+#df_all['channel_name'].fillna('unsure', inplace=True)
+
+df_all['ticket_id'].fillna('unsure', inplace=True)
+df_all['Customer_Status'].fillna('unsure', inplace=True)
+df_all['licensee_id'].fillna('unsure', inplace=True)
+df_all['parent_id'].fillna('unsure', inplace=True)
+df_all['licensee_name'].fillna('unsure', inplace=True)
+df_all['Channel_Category'].fillna('unsure', inplace=True)
+df_all['channel_name'].fillna('unsure', inplace=True)
+df_all['market'].fillna('unsure', inplace=True)
+df_all['country'].fillna('unsure', inplace=True)
+df_all['Nite_Type'].fillna('unsure', inplace=True)
+
+print('profile summary')
+
+# chnage 'Pseudo_Local_Licensee_Share' to Lic_Amt
+
+### set output content and assign to excel tab
+print('print of pivot table')
+tableOut = pd.pivot_table(df_all,index=['licensee_id',	'parent_id', 'licensee_name', 'Channel_Category',
+            'channel_name', 'market', 'country', 'Nite_Type'], values=['LocalGAAPRevenue', 'Lic_Amnt','quantity'],
+             aggfunc='sum', fill_value= 'Null', margins=False,droXYa=True)
+tableOut1 = pd.pivot_table(df_all,index=['licensee_id',	'parent_id', 'licensee_name', 'Channel_Category'
+            ], values=['LocalGAAPRevenue', 'Lic_Amnt','quantity'],aggfunc='sum')
+
+tableOut2 = pd.pivot_table(df_all,index=['channel_name'
+            ], values=['LocalGAAPRevenue', 'Lic_Amnt','quantity'], aggfunc='sum', fill_value= 'Null', droXYa = 'False')
+tableOut3 = pd.pivot_table(df_all,index=['market'
+            ], values=['LocalGAAPRevenue', 'Lic_Amnt','quantity'], aggfunc='sum')
+tableOut4 = pd.pivot_table(df_all,index=['country',
+             ], values=['LocalGAAPRevenue', 'Lic_Amnt','quantity'], aggfunc='sum')
+tableOut5 = pd.pivot_table(df_all,index=['Nite_Type'
+            ], values=['LocalGAAPRevenue', 'Lic_Amnt','quantity'],  aggfunc='sum')
+#print(tableOut)
+###############   data validation  ###########################################################
+print('start validation')
+print(df_all.dtypes)
+print(df_all.head(3))
+print('sum check start')
+print(df_all['LocalGAAPRevenue'].sum())
+print(df_all['Lic_Amnt'].sum())
+print(df_all['quantity'].sum())
+print('sum check end')
+print('unique chan name')
+print(df_all.channel_name.unique())
+print('end validation')
+##########################################################################
+##########################################################################
+print('start out')
+writer = pd.ExcelWriter('c:/barrett/Teave/XY/ouput/reportAll.xlsx')
+tableOut.to_excel(writer, 'PivotTable')
+tableOut1.to_excel(writer, 'one')
+tableOut2.to_excel(writer, 'two')
+tableOut3.to_excel(writer, 'three')
+tableOut4.to_excel(writer, 'four')
+tableOut5.to_excel(writer, 'five')
+writer.save()
+print("Writing xls complete")
+##########################################################################
+#save pickle
+#df.to_pickle(file_name)
+
+df_all.to_pickle('c:/barrett/Teave/XY/ouput/XY_df_all.pkl')
+
+
+##########################################################################
